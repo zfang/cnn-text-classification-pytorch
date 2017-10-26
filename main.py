@@ -39,7 +39,6 @@ parser.add_argument('-dataset', type=str, default='sst', help='specify dataset: 
 parser.add_argument('-fine-grained', action='store_true', default=False, help='use 5-class sst')
 args = parser.parse_args()
 
-
 # load SST dataset
 def sst(text_field, label_field,  **kargs):
     train_data, dev_data, test_data = datasets.SST.splits(text_field, label_field, fine_grained=args.fine_grained)
@@ -65,16 +64,21 @@ def mr(text_field, label_field, **kargs):
                                 **kargs)
     return train_iter, dev_iter
 
-
 # load data
 print("\nLoading data...")
 text_field = data.Field(lower=True)
 label_field = data.Field(sequential=False)
 
+split_args = {
+      'device': args.device,
+      'repeat': False,
+      'shuffle':  args.shuffle if args.shuffle else None
+      }
+
 if args.dataset == 'mr':
-   train_iter, dev_iter = mr(text_field, label_field, device=args.device, repeat=False)
+   train_iter, dev_iter = mr(text_field, label_field, **split_args)
 elif args.dataset == 'sst':
-   train_iter, dev_iter, test_iter = sst(text_field, label_field, device=args.device, repeat=False)
+   train_iter, dev_iter, test_iter = sst(text_field, label_field, **split_args)
 
 # update args and print
 args.embed_num = len(text_field.vocab)
