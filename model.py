@@ -18,10 +18,11 @@ class  CNN_Text(nn.Module):
         self.kernel_sizes = Ks
 
         self.embed = nn.Embedding(V, D)
-        #self.convs1 = [nn.Conv2d(Ci, Co, (K, D)) for K in Ks]
         self.convs1 = nn.ModuleList([nn.Conv2d(Ci, Co, (K, D)) for K in Ks])
         self.dropout = nn.Dropout(args.dropout)
         self.fc1 = nn.Linear(len(Ks)*Co, C)
+        self.fc1.state_dict()['weight'].normal_().mul_(0.01)
+        self.fc1.state_dict()['bias'].zero_()
 
     def conv_and_pool(self, x, i, conv):
         #print("\nx.size(2):", x.size(2), ", kernerl_size:", self.kernel_sizes[i])
