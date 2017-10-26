@@ -5,6 +5,7 @@ import torch.autograd as autograd
 import torch.nn.functional as F
 from nltk import word_tokenize
 import copy
+import torchnet.meter as meter
 
 def train(train_iter, dev_iter, model, args):
     if args.cuda:
@@ -18,6 +19,7 @@ def train(train_iter, dev_iter, model, args):
     best_model = copy.deepcopy(model)
     best_epoch = 1
     for epoch in range(1, args.epochs+1):
+        timeMeter = meter.TimeMeter('s')
         for batch in train_iter:
             feature, target = batch.text, batch.label
             feature.data.t_(), target.data.sub_(1)  # batch first, index align
@@ -34,9 +36,11 @@ def train(train_iter, dev_iter, model, args):
             model.renorm_fc(args.max_norm)
             optimizer.step()
 
+            predictions = torch.max(logit, 1)[1].view(target.size())
+
             steps += 1
             if steps % args.log_interval == 0:
-                corrects = (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+                corrects = (predictions.data == target.data).sum()
                 accuracy = 100.0 * corrects/batch.batch_size
                 sys.stdout.write(
                     '\rBatch[{}] - loss: {:.6f}  acc: {:.4f}%({}/{})'.format(steps,
@@ -50,6 +54,7 @@ def train(train_iter, dev_iter, model, args):
                 save_path = '{}_steps{}.pt'.format(save_prefix, steps)
                 torch.save(model, save_path)
 
+        print("\nTime for epoch {}: {:.2f}{}".format(epoch, timeMeter.value(), timeMeter.unit))
         dev_accuracy = eval(dev_iter, model, args, print_info=True)
         if dev_accuracy > best_dev_accuracy:
            best_dev_accuracy = dev_accuracy
@@ -64,6 +69,7 @@ def train(train_iter, dev_iter, model, args):
 def eval(data_iter, model, args, print_info=False):
     model.eval()
     corrects, avg_loss = 0, 0
+    confusionMeter = meter.ConfusionMeter(len(model.label_itos))
     for batch in data_iter:
         feature, target = batch.text, batch.label
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
@@ -73,19 +79,23 @@ def eval(data_iter, model, args, print_info=False):
         logit = model(feature)
         loss = F.cross_entropy(logit, target, size_average=False)
 
+        predictions = torch.max(logit, 1)[1].view(target.size())
         avg_loss += loss.data[0]
-        corrects += (torch.max(logit, 1)
-                     [1].view(target.size()).data == target.data).sum()
+        corrects += (predictions.data == target.data).sum()
+
+        confusionMeter.add(predictions.data, target.data)
 
     size = len(data_iter.dataset)
     avg_loss = avg_loss/size
     accuracy = 100.0 * corrects/size
     model.train()
     if print_info:
-       print('\nEvaluation - loss: {:.6f}  acc: {:.4f}%({}/{}) \n'.format(avg_loss,
+       print('Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})'.format(avg_loss,
                                                                           accuracy,
                                                                           corrects,
                                                                           size))
+       print("Confusion Matrix\n", confusionMeter.value())
+       print()
     return accuracy
 
 def predict(text, model, args):
