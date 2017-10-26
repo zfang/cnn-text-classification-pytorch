@@ -8,6 +8,9 @@ import torchtext.datasets as datasets
 import model
 import train
 import mydatasets
+import sys
+import json
+from collections import OrderedDict
 
 
 parser = argparse.ArgumentParser(description='CNN text classificer')
@@ -34,6 +37,7 @@ parser.add_argument('-no-cuda', action='store_true', default=False, help='disabl
 # option
 parser.add_argument('-snapshot', type=str, default=None, help='filename of model snapshot [default: None]')
 parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
+parser.add_argument('-predictfile', type=str, default=None, help='predict sentences in a file')
 parser.add_argument('-test', action='store_true', default=False, help='train or test')
 parser.add_argument('-dataset', type=str, default='sst', help='specify dataset: sst | mr')
 parser.add_argument('-fine-grained', action='store_true', default=False, help='use 5-class sst')
@@ -108,8 +112,23 @@ if args.cuda:
 
 # train or predict
 if args.predict is not None:
-    label = train.predict(args.predict, cnn, text_field, label_field)
+    label = train.predict(args.predict, cnn, text_field, label_field, args)
     print('\n[Text]  {}[Label] {}\n'.format(args.predict, label))
+elif args.predictfile is not None:
+    filepre = os.path.splitext(os.path.basename(args.predictfile))[0]
+    result_path = os.path.join(os.path.dirname(os.path.realpath(args.predictfile)), filepre + '-predictions.json')
+    with open(args.predictfile, 'r') as rf, \
+         open(result_path, 'w') as wf:
+       results = []
+       print()
+       for i, line in enumerate(rf):
+          line = line.strip()
+          label = train.predict(line, cnn, text_field, label_field, args)
+          results.append(OrderedDict([('text', line), ('label', label)]))
+          sys.stdout.write('\rPredicted [{}] sentences...'.format(i + 1))
+       print('\nPredictions are written to ', result_path)
+       json.dump(results, wf, indent=4)
+
 elif args.test:
     try:
         train.eval(test_iter, cnn, args)
@@ -118,5 +137,3 @@ elif args.test:
 else:
     print()
     train.train(train_iter, dev_iter, cnn, args)
-
-
