@@ -26,7 +26,7 @@ class  CNN_Text(nn.Module):
     def conv_and_pool(self, x, i, conv):
         #print("\nx.size(2):", x.size(2), ", kernerl_size:", self.kernel_sizes[i])
         if x.size(2) < self.kernel_sizes[i]:
-           x = nn.ZeroPad2d((0, 0, self.kernel_sizes[i] - x.size(2), 0))(x)
+           x = nn.ZeroPad2d((0, 0, 0, self.kernel_sizes[i] - x.size(2)))(x)
         #print("\nx.size(): ", x.size())
         x = F.selu(conv(x)).squeeze(3)
         return F.max_pool1d(x, x.size(2)).squeeze(2)
