@@ -19,7 +19,7 @@ parser.add_argument('-log-interval',  type=int, default=1,   help='how many step
 parser.add_argument('-test-interval', type=int, default=100, help='how many steps to wait before testing [default: 100]')
 parser.add_argument('-save-interval', type=int, default=500, help='how many steps to wait before saving [default:500]')
 parser.add_argument('-save-dir', type=str, default='snapshot', help='where to save the snapshot')
-# data 
+# data
 parser.add_argument('-shuffle', action='store_true', default=False, help='shuffle the data every epoch' )
 # model
 parser.add_argument('-dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
@@ -35,21 +35,23 @@ parser.add_argument('-no-cuda', action='store_true', default=False, help='disabl
 parser.add_argument('-snapshot', type=str, default=None, help='filename of model snapshot [default: None]')
 parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
 parser.add_argument('-test', action='store_true', default=False, help='train or test')
+parser.add_argument('-dataset', type=str, default='sst', help='specify dataset: sst | mr')
+parser.add_argument('-fine-grained', action='store_true', default=False, help='true: sst 5 classses; false: sst 3 classes')
 args = parser.parse_args()
 
 
 # load SST dataset
 def sst(text_field, label_field,  **kargs):
-    train_data, dev_data, test_data = datasets.SST.splits(text_field, label_field, fine_grained=True)
+    train_data, dev_data, test_data = datasets.SST.splits(text_field, label_field, fine_grained=args.fine_grained)
     text_field.build_vocab(train_data, dev_data, test_data)
     label_field.build_vocab(train_data, dev_data, test_data)
     train_iter, dev_iter, test_iter = data.BucketIterator.splits(
-                                        (train_data, dev_data, test_data), 
-                                        batch_sizes=(args.batch_size, 
-                                                     len(dev_data), 
+                                        (train_data, dev_data, test_data),
+                                        batch_sizes=(args.batch_size,
+                                                     len(dev_data),
                                                      len(test_data)),
                                         **kargs)
-    return train_iter, dev_iter, test_iter 
+    return train_iter, dev_iter, test_iter
 
 
 # load MR dataset
@@ -58,7 +60,7 @@ def mr(text_field, label_field, **kargs):
     text_field.build_vocab(train_data, dev_data)
     label_field.build_vocab(train_data, dev_data)
     train_iter, dev_iter = data.Iterator.splits(
-                                (train_data, dev_data), 
+                                (train_data, dev_data),
                                 batch_sizes=(args.batch_size, len(dev_data)),
                                 **kargs)
     return train_iter, dev_iter
@@ -68,9 +70,11 @@ def mr(text_field, label_field, **kargs):
 print("\nLoading data...")
 text_field = data.Field(lower=True)
 label_field = data.Field(sequential=False)
-train_iter, dev_iter = mr(text_field, label_field, device=-1, repeat=False)
-#train_iter, dev_iter, test_iter = sst(text_field, label_field, device=-1, repeat=False)
 
+if args.dataset == 'mr':
+   train_iter, dev_iter = mr(text_field, label_field, device=args.device, repeat=False)
+elif args.dataset == 'sst':
+   train_iter, dev_iter, test_iter = sst(text_field, label_field, device=args.device, repeat=False)
 
 # update args and print
 args.embed_num = len(text_field.vocab)
@@ -87,28 +91,28 @@ for attr, value in sorted(args.__dict__.items()):
 # model
 if args.snapshot is None:
     cnn = model.CNN_Text(args)
-else :
+else:
     print('\nLoading model from [%s]...' % args.snapshot)
     try:
         cnn = torch.load(args.snapshot)
-    except :
+    except:
         print("Sorry, This snapshot doesn't exist."); exit()
 
 if args.cuda:
     cnn = cnn.cuda()
-        
+
 
 # train or predict
 if args.predict is not None:
     label = train.predict(args.predict, cnn, text_field, label_field)
     print('\n[Text]  {}[Label] {}\n'.format(args.predict, label))
-elif args.test :
+elif args.test:
     try:
-        train.eval(test_iter, cnn, args) 
+        train.eval(test_iter, cnn, args)
     except Exception as e:
         print("\nSorry. The test dataset doesn't  exist.\n")
-else :
+else:
     print()
     train.train(train_iter, dev_iter, cnn, args)
-    
+
 
