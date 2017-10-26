@@ -3,6 +3,7 @@ import sys
 import torch
 import torch.autograd as autograd
 import torch.nn.functional as F
+from nltk import word_tokenize
 
 
 def train(train_iter, dev_iter, model, args):
@@ -77,7 +78,7 @@ def eval(data_iter, model, args):
 def predict(text, model, text_field, label_field, args):
     assert isinstance(text, str)
     model.eval()
-    text = text_field.preprocess(text)
+    text = word_tokenize(text)
     text = [[text_field.vocab.stoi[x] for x in text]]
     x = text_field.tensor_type(text)
     x = autograd.Variable(x, volatile=True)

@@ -120,8 +120,6 @@ The snapshot option means where your model load from. If you don't assign it, th
 	[Label] negative
 	```
 
-Your text must be separated by space, even punctuation.And, your text should longer then the max kernel size.
-
 ## Reference
 * [Convolutional Neural Networks for Sentence Classification](https://arxiv.org/abs/1408.5882)
 
