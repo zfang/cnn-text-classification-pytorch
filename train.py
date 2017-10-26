@@ -44,7 +44,7 @@ def train(train_iter, dev_iter, model, args):
                                                                              accuracy,
                                                                              corrects,
                                                                              batch.batch_size))
-            if steps % args.save_interval == 0:
+            if args.save_interval != 0 and steps % args.save_interval == 0:
                 if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
                 save_prefix = os.path.join(args.save_dir, 'snapshot')
                 save_path = '{}_steps{}.pt'.format(save_prefix, steps)

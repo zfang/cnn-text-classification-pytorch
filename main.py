@@ -18,7 +18,7 @@ def main():
     parser.add_argument('-epochs', type=int, default=256, help='number of epochs for train [default: 256]')
     parser.add_argument('-batch-size', type=int, default=64, help='batch size for training [default: 64]')
     parser.add_argument('-log-interval',  type=int, default=1,   help='how many steps to wait before logging training status [default: 1]')
-    parser.add_argument('-save-interval', type=int, default=500, help='how many steps to wait before saving [default:500]')
+    parser.add_argument('-save-interval', type=int, default=0, help='how many steps to wait before saving [default:0]')
     parser.add_argument('-save-dir', type=str, default='snapshot', help='where to save the snapshot')
     # data
     parser.add_argument('-shuffle', action='store_true', default=False, help='shuffle the data every epoch' )
