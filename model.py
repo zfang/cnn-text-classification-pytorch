@@ -28,7 +28,7 @@ class  CNN_Text(nn.Module):
         if x.size(2) < self.kernel_sizes[i]:
            x = nn.ZeroPad2d((0, 0, self.kernel_sizes[i] - x.size(2), 0))(x)
         #print("\nx.size(): ", x.size())
-        x = F.elu(conv(x)).squeeze(3)
+        x = F.selu(conv(x)).squeeze(3)
         return F.max_pool1d(x, x.size(2)).squeeze(2)
 
     def forward(self, x):
