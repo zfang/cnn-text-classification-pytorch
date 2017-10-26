@@ -86,7 +86,7 @@ Evaluation - loss: 0.672396  acc: 57.6923%(615/1066)
 If you has construct you test set, you make testing like:
 
 ```
-/main.py -test -snapshot="./snapshot/2017-02-11_15-50-53/snapshot_steps1500.pt
+/main.py -test -snapshot="./snapshot/2017-02-11_15-50-53/snapshot_steps1500.pt"
 ```
 The snapshot option means where your model load from. If you don't assign it, the model will start from scratch.
 
