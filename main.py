@@ -27,7 +27,7 @@ def main():
     parser.add_argument('-dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
     parser.add_argument('-max-norm', type=float, default=3.0, help='l2 constraint of parameters [default: 3.0]')
     parser.add_argument('-embed-dim', type=int, default=128, help='number of embedding dimension [default: 128]')
-    parser.add_argument('-kernel-num', type=int, default=100, help='number of each kind of kernel')
+    parser.add_argument('-kernel-num', type=int, default=100, help='number of each kind of kernel [default: 100]')
     parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
     parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
     # device
@@ -57,6 +57,13 @@ def main():
        text_field, label_field, train_iter, dev_iter = mr(**split_args)
     elif args.dataset == 'sst':
        text_field, label_field, train_iter, dev_iter, test_iter = sst(**split_args)
+
+    if train_iter:
+       print("train dataset size:", len(train_iter.dataset))
+    if dev_iter:
+       print("dev dataset size:", len(dev_iter.dataset))
+    if test_iter:
+       print("test dataset size:", len(test_iter.dataset))
 
     # update args and print
     args.embed_num = len(text_field.vocab)
@@ -109,5 +116,6 @@ def main():
     else:
         print()
         train.train(train_iter, dev_iter, cnn, args)
+        print()
 
 main()
