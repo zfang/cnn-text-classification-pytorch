@@ -19,7 +19,7 @@ def get_train_dev(callable, batch_size=32, **kargs):
                                 batch_sizes=(batch_size, len(dev_data)),
                                 **kargs)
 
-    return text_field, label_field, train_iter, dev_iter
+    return text_field, label_field, train_iter, dev_iter, None
 
 def get_train_dev_test(callable, batch_size=32, **kargs):
     text_field, label_field = get_fields()
@@ -35,14 +35,14 @@ def get_train_dev_test(callable, batch_size=32, **kargs):
     return text_field, label_field, train_iter, dev_iter, test_iter
 
 # load MR dataset
-def mr(fine_grained=False, **kargs):
+def mr(suffle=False, **kargs):
    return get_train_dev(
-         lambda text_field, label_field, **ka: mydatasets.MR.splits(text_field, label_field, shuffle=ka['shuffle']),
+         lambda text_field, label_field, **ka: mydatasets.MR.splits(text_field, label_field, shuffle=suffle),
          **kargs)
 
 # load SST dataset
-def sst(fine_grained=False, **kargs):
+def sst(fine_grained=False, train_subtrees=False, **kargs):
     return get_train_dev_test(
-          lambda text_field, label_field, **ka: datasets.SST.splits(text_field, label_field, fine_grained=fine_grained),
+          lambda text_field, label_field, **ka: datasets.SST.splits(text_field, label_field, fine_grained=fine_grained, train_subtrees=train_subtrees),
           **kargs)
 

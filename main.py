@@ -7,7 +7,7 @@ import torchtext.data as data
 import model
 import train
 import sys
-import json
+import csv
 from util import sst, mr
 from collections import OrderedDict
 
@@ -40,6 +40,7 @@ def main():
     parser.add_argument('-test', action='store_true', default=False, help='train or test')
     parser.add_argument('-dataset', type=str, default='sst', help='specify dataset: sst | mr')
     parser.add_argument('-fine-grained', action='store_true', default=False, help='use 5-class sst')
+    parser.add_argument('-train-subtrees', action='store_true', default=False, help='train sst subtrees')
     args = parser.parse_args()
 
     # load data
@@ -47,16 +48,15 @@ def main():
 
     split_args = {
           'batch_size': args.batch_size,
-          'fine_grained': args.fine_grained,
           'device': args.device,
           'repeat': False,
           'shuffle':  args.shuffle if args.shuffle else None
           }
 
     if args.dataset == 'mr':
-       text_field, label_field, train_iter, dev_iter = mr(**split_args)
+       text_field, label_field, train_iter, dev_iter, test_iter = mr(**split_args)
     elif args.dataset == 'sst':
-       text_field, label_field, train_iter, dev_iter, test_iter = sst(**split_args)
+       text_field, label_field, train_iter, dev_iter, test_iter = sst(fine_grained=args.fine_grained, train_subtrees=args.train_subtrees, **split_args)
 
     if train_iter:
        print("train dataset size:", len(train_iter.dataset))
@@ -95,23 +95,25 @@ def main():
         print('\n[Text] {} [Label] {}\n'.format(args.predict, label))
     elif args.predictfile is not None:
         filepre = os.path.splitext(os.path.basename(args.predictfile))[0]
-        result_path = os.path.join(os.path.dirname(os.path.realpath(args.predictfile)), filepre + '-predictions.json')
+        predictions_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'predictions')
+        result_path = os.path.join(predictions_dir, filepre + '-predictions.csv')
+        if not os.path.isdir(predictions_dir): os.makedirs(predictions_dir)
         with open(args.predictfile, 'r') as rf, \
              open(result_path, 'w') as wf:
-           results = []
            print()
+           writer = csv.writer(wf)
+           writer.writerow(['text', 'label'])
            for i, line in enumerate(rf):
               line = line.strip()
               label = train.predict(line, cnn, text_field, label_field, args)
-              results.append(OrderedDict([('text', line), ('label', label)]))
+              writer.writerow([line, label])
               sys.stdout.write('\rPredicted [{}] sentences...'.format(i + 1))
            print('\nPredictions are written to ', result_path)
-           json.dump(results, wf, indent=4)
 
     elif args.test:
-        try:
+        if test_iter:
             train.eval(test_iter, cnn, args)
-        except Exception as e:
+        else:
             print("\nSorry. The test dataset doesn't exist.\n")
     else:
         print()
