@@ -49,4 +49,4 @@ class  CNN_Text(nn.Module):
         return logit
 
     def renorm_fc(self, max_norm):
-       self.fc1.state_dict()['weight'].data.renorm_(2, 0, max_norm)
+       self.fc1.state_dict()['weight'].renorm_(2, 0, max_norm)
