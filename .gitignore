@@ -95,12 +95,10 @@ ENV/
 *.pt
 
 # dataset
-rt-polaritydata
+rt-polaritydata*
 trees
 *.tar
 *.zip
 
 # pycharm
 .idea
-
-rt-polaritydata.README.1.0.txt
