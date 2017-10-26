@@ -27,6 +27,7 @@ def train(train_iter, dev_iter, model, args):
             #print('target vector', target.size())
             loss = F.cross_entropy(logit, target)
             loss.backward()
+            model.renorm_fc(args.max_norm)
             optimizer.step()
 
             steps += 1

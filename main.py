@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 import os
 import argparse
 import datetime
@@ -36,7 +36,7 @@ parser.add_argument('-snapshot', type=str, default=None, help='filename of model
 parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
 parser.add_argument('-test', action='store_true', default=False, help='train or test')
 parser.add_argument('-dataset', type=str, default='sst', help='specify dataset: sst | mr')
-parser.add_argument('-fine-grained', action='store_true', default=False, help='true: sst 5 classses; false: sst 3 classes')
+parser.add_argument('-fine-grained', action='store_true', default=False, help='use 5-class sst')
 args = parser.parse_args()
 
 
