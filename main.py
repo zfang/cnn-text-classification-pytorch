@@ -11,36 +11,9 @@ import csv
 from util import sst, mr
 from collections import OrderedDict
 
-def main():
-    parser = argparse.ArgumentParser(description='CNN text classificer')
-    # learning
-    parser.add_argument('-lr', type=float, default=0.001, help='initial learning rate [default: 0.001]')
-    parser.add_argument('-epochs', type=int, default=256, help='number of epochs for train [default: 256]')
-    parser.add_argument('-batch-size', type=int, default=64, help='batch size for training [default: 64]')
-    parser.add_argument('-log-interval',  type=int, default=1,   help='how many steps to wait before logging training status [default: 1]')
-    parser.add_argument('-save-interval', type=int, default=0, help='how many steps to wait before saving [default:0]')
-    parser.add_argument('-save-dir', type=str, default='snapshot', help='where to save the snapshot')
-    # data
-    parser.add_argument('-shuffle', action='store_true', default=False, help='shuffle the data every epoch' )
-    # model
-    parser.add_argument('-dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
-    parser.add_argument('-max-norm', type=float, default=3.0, help='l2 constraint of parameters [default: 3.0]')
-    parser.add_argument('-embed-dim', type=int, default=128, help='number of embedding dimension [default: 128]')
-    parser.add_argument('-kernel-num', type=int, default=100, help='number of each kind of kernel [default: 100]')
-    parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
-    parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
-    # device
-    parser.add_argument('-device', type=int, default=-1, help='device to use for iterate data, -1 mean cpu [default: -1]')
-    parser.add_argument('-no-cuda', action='store_true', default=False, help='disable the gpu' )
-    # option
-    parser.add_argument('-snapshot', type=str, default=None, help='filename of model snapshot [default: None]')
-    parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
-    parser.add_argument('-predictfile', type=str, default=None, help='predict sentences in a file')
-    parser.add_argument('-test', action='store_true', default=False, help='train or test')
-    parser.add_argument('-dataset', type=str, default='sst', help='specify dataset: sst | mr')
-    parser.add_argument('-fine-grained', action='store_true', default=False, help='use 5-class sst')
-    parser.add_argument('-train-subtrees', action='store_true', default=False, help='train sst subtrees')
-    args = parser.parse_args()
+def load_data(args):
+    if args.dataset is None:
+       return None, None, None, None, None
 
     # load data
     print("\nLoading data...")
@@ -64,9 +37,51 @@ def main():
     if test_iter:
        print("test dataset size:", len(test_iter.dataset))
 
+    if args.dataset == 'mr':
+       return mr(**split_args)
+    elif args.dataset == 'sst':
+       return sst(fine_grained=args.fine_grained, train_subtrees=args.train_subtrees, **split_args)
+
+
+def main():
+    parser = argparse.ArgumentParser(description='CNN text classificer')
+    # learning
+    parser.add_argument('-lr', type=float, default=0.001, help='initial learning rate [default: 0.001]')
+    parser.add_argument('-epochs', type=int, default=25, help='number of epochs for train [default: 25]')
+    parser.add_argument('-batch-size', type=int, default=64, help='batch size for training [default: 64]')
+    parser.add_argument('-log-interval',  type=int, default=1,   help='how many steps to wait before logging training status [default: 1]')
+    parser.add_argument('-save-interval', type=int, default=0, help='how many steps to wait before saving [default:0]')
+    parser.add_argument('-save-dir', type=str, default='snapshot', help='where to save the snapshot')
+    # data
+    parser.add_argument('-shuffle', action='store_true', default=False, help='shuffle the data every epoch' )
+    # model
+    parser.add_argument('-dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
+    parser.add_argument('-max-norm', type=float, default=3.0, help='l2 constraint of parameters [default: 3.0]')
+    parser.add_argument('-embed-dim', type=int, default=128, help='number of embedding dimension [default: 128]')
+    parser.add_argument('-kernel-num', type=int, default=100, help='number of each kind of kernel [default: 100]')
+    parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
+    parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
+    # device
+    parser.add_argument('-device', type=int, default=-1, help='device to use for iterate data, -1 mean cpu [default: -1]')
+    parser.add_argument('-no-cuda', action='store_true', default=False, help='disable the gpu' )
+    # option
+    parser.add_argument('-snapshot', type=str, default=None, help='filename of model snapshot [default: None]')
+    parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
+    parser.add_argument('-predictfile', type=str, default=None, help='predict sentences in a file')
+    parser.add_argument('-test', action='store_true', default=False, help='train or test')
+    parser.add_argument('-dataset', type=str, default='sst', help='specify dataset: sst | mr | none')
+    parser.add_argument('-fine-grained', action='store_true', default=False, help='use 5-class sst')
+    parser.add_argument('-train-subtrees', action='store_true', default=False, help='train sst subtrees')
+    args = parser.parse_args()
+
     # update args and print
-    args.embed_num = len(text_field.vocab)
-    args.class_num = len(label_field.vocab) - 1 # exclude <unk>
+    args.dataset = args.dataset if args.dataset != 'none' else None
+    text_field, label_field, train_iter, dev_iter, test_iter = load_data(args)
+
+    if args.dataset:
+        args.embed_num = len(text_field.vocab)
+        args.class_num = len(label_field.vocab) - 1 # exclude <unk>
+
     args.cuda = (not args.no_cuda) and torch.cuda.is_available(); del args.no_cuda
     args.kernel_sizes = [int(k) for k in args.kernel_sizes.split(',')]
     args.save_dir = os.path.join(args.save_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
@@ -77,7 +92,7 @@ def main():
 
     # model
     if args.snapshot is None:
-        cnn = model.CNN_Text(args)
+        cnn = model.CNN_Text(args, text_field, label_field)
     else:
         print('\nLoading model from [%s]...' % args.snapshot)
         try:
@@ -90,12 +105,12 @@ def main():
 
     # train or predict
     if args.predict is not None:
-        label = train.predict(args.predict, cnn, text_field, label_field, args)
+        label = train.predict(args.predict, cnn, args)
         print('\n[Text] {} [Label] {}\n'.format(args.predict, label))
     elif args.predictfile is not None:
         filepre = os.path.splitext(os.path.basename(args.predictfile))[0]
         predictions_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'predictions')
-        result_path = os.path.join(predictions_dir, filepre + '-predictions.csv')
+        result_path = os.path.join(predictions_dir, filepre + '-predictions-' + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') +'.csv')
         if not os.path.isdir(predictions_dir): os.makedirs(predictions_dir)
         with open(args.predictfile, 'r') as rf, \
              open(result_path, 'w') as wf:
@@ -104,7 +119,7 @@ def main():
            writer.writerow(['text', 'label'])
            for i, line in enumerate(rf):
               line = line.strip()
-              label = train.predict(line, cnn, text_field, label_field, args)
+              label = train.predict(line, cnn, args)
               writer.writerow([line, label])
               sys.stdout.write('\rPredicted [{}] sentences...'.format(i + 1))
            print('\nPredictions are written to ', result_path)

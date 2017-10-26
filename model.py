@@ -4,9 +4,14 @@ import torch.nn.functional as F
 
 class  CNN_Text(nn.Module):
 
-    def __init__(self, args):
+    def __init__(self, args, text_field, label_field):
         super(CNN_Text,self).__init__()
         self.args = args
+        if text_field is not None:
+           self.vocab_stoi = text_field.vocab.stoi
+           self.tensor_type = text_field.tensor_type
+        if label_field is not None:
+           self.label_itos = label_field.vocab.itos
 
         V = args.embed_num
         D = args.embed_dim

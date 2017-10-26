@@ -61,7 +61,6 @@ def train(train_iter, dev_iter, model, args):
     print("Best epoch:", best_epoch)
     print("Best dev accuracy:", best_dev_accuracy)
 
-
 def eval(data_iter, model, args, print_info=False):
     model.eval()
     corrects, avg_loss = 0, 0
@@ -89,16 +88,16 @@ def eval(data_iter, model, args, print_info=False):
                                                                           size))
     return accuracy
 
-def predict(text, model, text_field, label_field, args):
+def predict(text, model, args):
     assert isinstance(text, str)
     model.eval()
     text = word_tokenize(text)
-    text = [[text_field.vocab.stoi[x] for x in text]]
-    x = text_field.tensor_type(text)
+    text = [[model.vocab_stoi[x] for x in text]]
+    x = model.tensor_type(text)
     x = autograd.Variable(x, volatile=True)
     if args.cuda:
        x = x.cuda()
     #print(x)
     output = model(x)
     _, predicted = torch.max(output, 1)
-    return label_field.vocab.itos[predicted.data[0]+1]
+    return model.label_itos[predicted.data[0]+1]
