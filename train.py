@@ -112,5 +112,9 @@ def predict(text, model, args):
        x = x.cuda()
     #print(x)
     output = model(x)
+    if args.debug:
+        output = F.softmax(output)
+        for i, v in enumerate(output[0]):
+           print("{:8} {:.4f}".format(model.label_itos[i+1], v.data.cpu().numpy()[0]))
     _, predicted = torch.max(output, 1)
     return model.label_itos[predicted.data[0]+1]

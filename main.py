@@ -120,10 +120,12 @@ def main():
     if args.cuda:
         cnn = cnn.cuda()
 
+    print()
+
     # train or predict
     if args.predict is not None:
         label = train.predict(args.predict, cnn, args)
-        print('\n[Text] {} [Label] {}\n'.format(args.predict, label))
+        print('[Text]  {}\n[Label] {}\n'.format(args.predict, label))
     elif args.predictfile is not None:
         filepre = os.path.splitext(os.path.basename(args.predictfile))[0]
         predictions_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'predictions')
@@ -131,7 +133,6 @@ def main():
         if not os.path.isdir(predictions_dir): os.makedirs(predictions_dir)
         with open(args.predictfile, 'r') as rf, \
              open(result_path, 'w') as wf:
-           print()
            writer = csv.writer(wf)
            writer.writerow(['text', 'label'])
            for i, line in enumerate(rf):
@@ -147,7 +148,6 @@ def main():
         else:
             print("\nThe test dataset does not exist.\n")
     else:
-        print()
         train.train(train_iter, dev_iter, cnn, args)
         print()
 

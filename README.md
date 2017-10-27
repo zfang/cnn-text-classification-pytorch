@@ -14,16 +14,6 @@ This is the implementation of Kim's [Convolutional Neural Networks for Sentence 
 * torchtext > 0.1
 * numpy
 
-## Result
-I just tried two dataset, MR and SST.
-
-|Dataset|Class Size|Best Result|Kim's Paper Result|
-|---|---|---|---|
-|MR|2|77.5%(CNN-rand-static)|76.1%(CNN-rand-nostatic)|
-|SST|5|37.2%(CNN-rand-static)|45.0%(CNN-rand-nostatic)|
-
-I haven't adjusted the hyper-parameters for SST seriously.
-
 ## Usage
 ```
 ./main.py -h
@@ -48,7 +38,6 @@ optional arguments:
   -max_norm MAX_NORM    l2 constraint of parameters
   -cpu                  disable the gpu
   -device DEVICE        device to use for iterate data
-  -embed-dim EMBED_DIM
   -static               fix the embedding
   -kernel-sizes KERNEL_SIZES
                         Comma-separated kernel size to use for convolution
