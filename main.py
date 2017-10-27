@@ -62,7 +62,7 @@ def main():
     parser.add_argument('-train-subtrees', action='store_true', default=False, help='train sst subtrees')
     parser.add_argument('-load-word-vectors', type=str, default=None, help='load pre-trained word vectors in binary format')
     parser.add_argument('-load-saved-word-vectors', type=str, default=None, help='load saved word vectors')
-    parser.add_argument('-debug', action='store_true', default=False, help='Debug mode')
+    parser.add_argument('-debug', action='store_true', default=False, help='debug mode')
     args = parser.parse_args()
 
     # update args and print

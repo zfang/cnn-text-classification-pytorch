@@ -31,33 +31,40 @@ CNN text classificer
 
 optional arguments:
   -h, --help            show this help message and exit
-  -batch-size N         batch size for training [default: 50]
-  -lr LR                initial learning rate [default: 0.01]
-  -epochs N             number of epochs for train [default: 10]
-  -dropout              the probability for dropout [default: 0.5]
-  -max_norm MAX_NORM    l2 constraint of parameters
-  -cpu                  disable the gpu
-  -device DEVICE        device to use for iterate data
-  -static               fix the embedding
-  -kernel-sizes KERNEL_SIZES
-                        Comma-separated kernel size to use for convolution
-  -kernel-num KERNEL_NUM
-                        number of each kind of kernel
-  -class-num CLASS_NUM  number of class
-  -shuffle              shuffle the data every epoch
-  -num-workers NUM_WORKERS
-                        how many subprocesses to use for data loading
-                        [default: 0]
+  -lr LR                initial learning rate [default: 0.001]
+  -epochs EPOCHS        number of epochs for train [default: 25]
+  -batch-size BATCH_SIZE
+                        batch size for training [default: 64]
   -log-interval LOG_INTERVAL
-                        how many batches to wait before logging training
-                        status
-  -test-interval TEST_INTERVAL
-                        how many epochs to wait before testing
+                        how many steps to wait before logging training status
+                        [default: 1]
   -save-interval SAVE_INTERVAL
-                        how many epochs to wait before saving
-  -predict PREDICT      predict the sentence given
+                        how many steps to wait before saving [default:0]
+  -save-dir SAVE_DIR    where to save the snapshot
+  -shuffle              shuffle the data every epoch
+  -dropout DROPOUT      the probability for dropout [default: 0.5]
+  -max-norm MAX_NORM    l2 constraint of parameters [default: 3.0]
+  -kernel-num KERNEL_NUM
+                        number of each kind of kernel [default: 100]
+  -kernel-sizes KERNEL_SIZES
+                        comma-separated kernel size to use for convolution
+  -static               fix the embedding
+  -device DEVICE        device to use for iterate data, -1 mean cpu [default:
+                        -1]
+  -no-cuda              disable the gpu
   -snapshot SNAPSHOT    filename of model snapshot [default: None]
-  -save-dir SAVE_DIR    where to save the checkpoint
+  -predict PREDICT      predict the sentence given
+  -predictfile PREDICTFILE
+                        predict sentences in a file
+  -test                 train or test
+  -dataset DATASET      specify dataset: sst | mr | none
+  -fine-grained         use 5-class sst
+  -train-subtrees       train sst subtrees
+  -load-word-vectors LOAD_WORD_VECTORS
+                        load pre-trained word vectors in binary format
+  -load-saved-word-vectors LOAD_SAVED_WORD_VECTORS
+                        load saved word vectors
+  -debug                debug mode
 ```
 
 ## Train
