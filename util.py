@@ -65,3 +65,6 @@ def load_word_vectors(filepath, binary, vocab):
     word_vector_matrix.append(np.zeros(dim).astype("float32"))
 
     return np.array(word_vector_matrix)
+
+def print_time(text, timeMeter):
+    print("\nTime for {}: {:.2f}{}".format(text, timeMeter.value(), timeMeter.unit))

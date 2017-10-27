@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from nltk import word_tokenize
 import copy
 import torchnet.meter as meter
+from util import print_time
 
 def train(train_iter, dev_iter, model, args):
     if args.cuda:
@@ -18,8 +19,10 @@ def train(train_iter, dev_iter, model, args):
     best_dev_accuracy = 0
     best_model = copy.deepcopy(model)
     best_epoch = 1
+    epochTimer = meter.TimeMeter('s')
+    stepTimer = meter.TimeMeter('s')
     for epoch in range(1, args.epochs+1):
-        timeMeter = meter.TimeMeter('s')
+        epochTimer.reset()
         for batch in train_iter:
             feature, target = batch.text, batch.label
             feature.data.t_(), target.data.sub_(1)  # batch first, index align
@@ -27,14 +30,14 @@ def train(train_iter, dev_iter, model, args):
                 feature, target = feature.cuda(), target.cuda()
 
             optimizer.zero_grad()
+
             logit = model(feature)
 
-            #print('logit vector', logit.size())
-            #print('target vector', target.size())
             loss = F.cross_entropy(logit, target)
             loss.backward()
-            model.renorm_fc(args.max_norm)
             optimizer.step()
+
+            model.renorm_fc(args.max_norm)
 
             predictions = torch.max(logit, 1)[1].view(target.size())
 
@@ -43,18 +46,18 @@ def train(train_iter, dev_iter, model, args):
                 corrects = (predictions.data == target.data).sum()
                 accuracy = 100.0 * corrects/batch.batch_size
                 sys.stdout.write(
-                    '\rBatch[{}] - loss: {:.6f}  acc: {:.4f}%({}/{})'.format(steps,
-                                                                             loss.data[0],
-                                                                             accuracy,
-                                                                             corrects,
-                                                                             batch.batch_size))
+                      '\rBatch[{}] - loss: {:.6f}  acc: {:.4f}%({}/{}), time: {:.2f}{}'.format(
+                         steps, loss.data[0], accuracy, corrects, batch.batch_size, stepTimer.value(), stepTimer.unit))
+                stepTimer.reset()
+
             if args.save_interval != 0 and steps % args.save_interval == 0:
                 if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
                 save_prefix = os.path.join(args.save_dir, 'snapshot')
                 save_path = '{}_steps{}.pt'.format(save_prefix, steps)
                 torch.save(model, save_path)
 
-        print("\nTime for epoch {}: {:.2f}{}".format(epoch, timeMeter.value(), timeMeter.unit))
+        print()
+        print_time('epoch {}'.format(epoch), epochTimer)
         dev_accuracy = eval(dev_iter, model, args, print_info=True)
         if dev_accuracy > best_dev_accuracy:
            best_dev_accuracy = dev_accuracy

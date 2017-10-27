@@ -61,6 +61,7 @@ class  CNN_Text(nn.Module):
 
         x = self.dropout(x) # (N,len(Ks)*Co)
         logit = self.fc1(x) # (N,C)
+
         return logit
 
     def renorm_fc(self, max_norm):

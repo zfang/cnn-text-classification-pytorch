@@ -103,6 +103,8 @@ trees
 # pycharm
 .idea
 
+*.npy
+
 snapshot
 predictions
 
