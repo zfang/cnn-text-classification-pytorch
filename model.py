@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class  CNN_Text(nn.Module):
 
-    def __init__(self, args, text_field, label_field):
+    def __init__(self, args, text_field, label_field, word_vector_matrix):
         super(CNN_Text,self).__init__()
         self.args = args
         if text_field is not None:
@@ -13,8 +13,13 @@ class  CNN_Text(nn.Module):
         if label_field is not None:
            self.label_itos = label_field.vocab.itos
 
-        V = args.embed_num
-        D = args.embed_dim
+        if word_vector_matrix is not None:
+           V = len(word_vector_matrix)
+           D = len(word_vector_matrix[0])
+        else:
+           V = args.embed_num + 1
+           D = args.embed_dim
+
         C = args.class_num
         Ci = 1
         Co = args.kernel_num
@@ -22,26 +27,30 @@ class  CNN_Text(nn.Module):
 
         self.kernel_sizes = Ks
 
-        self.embed = nn.Embedding(V, D)
+        self.embed = nn.Embedding(V, D, padding_idx=V-1)
+
+        if word_vector_matrix is not None:
+           self.embed.weight.data.copy_(torch.from_numpy(word_vector_matrix))
+
+           if args.static:
+              self.embed.weight.requires_grad = False
+
         self.convs1 = nn.ModuleList([nn.Conv2d(Ci, Co, (K, D)) for K in Ks])
+
         self.dropout = nn.Dropout(args.dropout)
+
         self.fc1 = nn.Linear(len(Ks)*Co, C)
-        self.fc1.state_dict()['weight'].normal_().mul_(0.01)
-        self.fc1.state_dict()['bias'].zero_()
+        self.fc1.weight.data.normal_().mul_(0.01)
+        self.fc1.bias.data.zero_()
 
     def conv_and_pool(self, x, i, conv):
-        #print("\nx.size(2):", x.size(2), ", kernerl_size:", self.kernel_sizes[i])
         if x.size(2) < self.kernel_sizes[i]:
            x = nn.ZeroPad2d((0, 0, 0, self.kernel_sizes[i] - x.size(2)))(x)
-        #print("\nx.size(): ", x.size())
         x = F.selu(conv(x)).squeeze(3)
         return F.max_pool1d(x, x.size(2)).squeeze(2)
 
     def forward(self, x):
         x = self.embed(x) # (N,W,D)
-
-        if self.args.static:
-            x = Variable(x)
 
         x = x.unsqueeze(1) # (N,Ci,W,D)
 
@@ -55,4 +64,4 @@ class  CNN_Text(nn.Module):
         return logit
 
     def renorm_fc(self, max_norm):
-       self.fc1.state_dict()['weight'].renorm_(2, 0, max_norm)
+       self.fc1.weight.data.renorm_(2, 0, max_norm)

@@ -105,3 +105,6 @@ trees
 
 snapshot
 predictions
+
+src/pip-delete-this-directory.txt
+src/torchnet

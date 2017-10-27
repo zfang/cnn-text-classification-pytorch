@@ -1,6 +1,8 @@
 import torchtext.data as data
 import torchtext.datasets as datasets
 import mydatasets
+import gensim
+import numpy as np
 
 def get_fields():
     text_field = data.Field(lower=True)
@@ -35,9 +37,9 @@ def get_train_dev_test(callable, batch_size=32, **kargs):
     return text_field, label_field, train_iter, dev_iter, test_iter
 
 # load MR dataset
-def mr(suffle=False, **kargs):
+def mr(shuffle=False, **kargs):
    return get_train_dev(
-         lambda text_field, label_field, **ka: mydatasets.MR.splits(text_field, label_field, shuffle=suffle),
+         lambda text_field, label_field, **ka: mydatasets.MR.splits(text_field, label_field, shuffle=shuffle),
          **kargs)
 
 # load SST dataset
@@ -46,3 +48,20 @@ def sst(fine_grained=False, train_subtrees=False, **kargs):
           lambda text_field, label_field, **ka: datasets.SST.splits(text_field, label_field, fine_grained=fine_grained, train_subtrees=train_subtrees),
           **kargs)
 
+def get_unk_vector(dim, range=0.01):
+   return np.random.uniform(-range, range, dim).astype("float32")
+
+def load_word_vectors(filepath, binary, vocab):
+    model = gensim.models.KeyedVectors.load_word2vec_format(filepath, binary=binary)
+    dim = model.__dict__['vector_size']
+    word_vector_matrix = []
+    for word in vocab.itos:
+        if word in model.vocab:
+           word_vector_matrix.append(model.word_vec(word))
+        else:
+           word_vector_matrix.append(get_unk_vector(dim))
+
+    word_vector_matrix.append(get_unk_vector(dim))
+    word_vector_matrix.append(np.zeros(dim).astype("float32"))
+
+    return np.array(word_vector_matrix)

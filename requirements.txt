@@ -1,3 +1,5 @@
 nltk
 torchtext
+gensim
+h5py
 -e git+https://github.com/pytorch/tnt.git@master#egg=torchnet

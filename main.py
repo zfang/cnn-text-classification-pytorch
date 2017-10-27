@@ -8,7 +8,7 @@ import model
 import train
 import sys
 import csv
-from util import sst, mr
+from util import sst, mr, load_word_vectors
 from collections import OrderedDict
 
 def load_data(args):
@@ -57,7 +57,6 @@ def main():
     # model
     parser.add_argument('-dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
     parser.add_argument('-max-norm', type=float, default=3.0, help='l2 constraint of parameters [default: 3.0]')
-    parser.add_argument('-embed-dim', type=int, default=128, help='number of embedding dimension [default: 128]')
     parser.add_argument('-kernel-num', type=int, default=100, help='number of each kind of kernel [default: 100]')
     parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
     parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
@@ -72,6 +71,7 @@ def main():
     parser.add_argument('-dataset', type=str, default='sst', help='specify dataset: sst | mr | none')
     parser.add_argument('-fine-grained', action='store_true', default=False, help='use 5-class sst')
     parser.add_argument('-train-subtrees', action='store_true', default=False, help='train sst subtrees')
+    parser.add_argument('-load-word-vectors', type=str, default=None, help='load pre-trained word vectors in binary format')
     args = parser.parse_args()
 
     # update args and print
@@ -81,6 +81,11 @@ def main():
     if args.dataset:
         args.embed_num = len(text_field.vocab)
         args.class_num = len(label_field.vocab) - 1 # exclude <unk>
+
+    word_vector_matrix = None
+    if text_field and args.load_word_vectors:
+       print("\nLoading pre-trained word vectors...")
+       word_vector_matrix = load_word_vectors(args.load_word_vectors, binary=True, vocab=text_field.vocab)
 
     args.cuda = (not args.no_cuda) and torch.cuda.is_available(); del args.no_cuda
     args.kernel_sizes = [int(k) for k in args.kernel_sizes.split(',')]
@@ -92,7 +97,7 @@ def main():
 
     # model
     if args.snapshot is None:
-        cnn = model.CNN_Text(args, text_field, label_field)
+        cnn = model.CNN_Text(args, text_field, label_field, word_vector_matrix)
     else:
         print('\nLoading model from [%s]...' % args.snapshot)
         try:
