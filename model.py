@@ -17,7 +17,7 @@ class  CNN_Text(nn.Module):
            V = len(word_vector_matrix)
            D = len(word_vector_matrix[0])
         else:
-           V = args.embed_num + 1
+           V = args.embed_num
            D = args.embed_dim
 
         C = args.class_num
@@ -27,7 +27,7 @@ class  CNN_Text(nn.Module):
 
         self.kernel_sizes = Ks
 
-        self.embed = nn.Embedding(V, D, padding_idx=V-1)
+        self.embed = nn.Embedding(V, D)
 
         if word_vector_matrix is not None:
            self.embed.weight.data.copy_(torch.from_numpy(word_vector_matrix))
