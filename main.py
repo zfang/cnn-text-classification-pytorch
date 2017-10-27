@@ -27,18 +27,6 @@ def load_data(args):
           }
 
     if args.dataset == 'mr':
-       text_field, label_field, train_iter, dev_iter, test_iter = mr(**split_args)
-    elif args.dataset == 'sst':
-       text_field, label_field, train_iter, dev_iter, test_iter = sst(fine_grained=args.fine_grained, train_subtrees=args.train_subtrees, **split_args)
-
-    if train_iter:
-       print("train dataset size:", len(train_iter.dataset))
-    if dev_iter:
-       print("dev dataset size:", len(dev_iter.dataset))
-    if test_iter:
-       print("test dataset size:", len(test_iter.dataset))
-
-    if args.dataset == 'mr':
        return mr(**split_args)
     elif args.dataset == 'sst':
        return sst(fine_grained=args.fine_grained, train_subtrees=args.train_subtrees, **split_args)
@@ -80,6 +68,13 @@ def main():
     # update args and print
     args.dataset = args.dataset if args.dataset != 'none' else None
     text_field, label_field, train_iter, dev_iter, test_iter = load_data(args)
+
+    if train_iter:
+       print("train dataset size:", len(train_iter.dataset))
+    if dev_iter:
+       print("dev dataset size:", len(dev_iter.dataset))
+    if test_iter:
+       print("test dataset size:", len(test_iter.dataset))
 
     if args.dataset:
         args.embed_num = len(text_field.vocab)
