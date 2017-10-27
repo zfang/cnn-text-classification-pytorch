@@ -98,7 +98,10 @@ def main():
 
     args.cuda = (not args.no_cuda) and torch.cuda.is_available(); del args.no_cuda
     args.kernel_sizes = [int(k) for k in args.kernel_sizes.split(',')]
-    args.save_dir = os.path.join(args.save_dir, args.dataset, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    if args.dataset:
+       args.save_dir = os.path.join(args.save_dir, args.dataset, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    else:
+       args.save_dir = os.path.join(args.save_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
     print("\nParameters:")
     for attr, value in sorted(args.__dict__.items()):
