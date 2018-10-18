@@ -28,6 +28,8 @@ def train(train_iter, dev_iter, model, args):
     if not os.path.isdir(args.save_dir):
         os.makedirs(args.save_dir)
 
+    identifier = 'lr{}_batch{}'.format(args.lr, args.batch_size)
+
     def checkpoint():
         global best_dev_accuracy
         global best_model
@@ -37,7 +39,7 @@ def train(train_iter, dev_iter, model, args):
             best_dev_accuracy = dev_accuracy
             best_model = copy.deepcopy(model)
             best_epoch = epoch
-        torch.save(best_model, os.path.join(args.save_dir, 'model_lr{}_batch{}.pt'.format(args.lr, args.batch_size)))
+        torch.save(best_model, os.path.join(args.save_dir, 'model_{}.pt'.format(identifier)))
 
     for epoch in tqdm(range(1, args.epochs + 1)):
         for batch in train_iter:
@@ -63,8 +65,8 @@ def train(train_iter, dev_iter, model, args):
             if steps % args.log_interval == 0:
                 corrects = (predictions.data == target.data).sum()
                 accuracy = 100.0 * corrects / batch.batch_size
-                tensorboard_logger.add_scalar('training_loss', loss.data[0], steps)
-                tensorboard_logger.add_scalar('training_accuracy', accuracy, steps)
+                tensorboard_logger.add_scalar('training_loss_{}'.format(identifier), loss.data[0], steps)
+                tensorboard_logger.add_scalar('training_accuracy_{}'.format(identifier), accuracy, steps)
 
             if args.save_interval != 0 and steps % args.save_interval == 0:
                 checkpoint()
