@@ -9,7 +9,6 @@ class  CNN_Text(nn.Module):
         self.args = args
         if text_field is not None:
            self.vocab_stoi = text_field.vocab.stoi
-           self.tensor_type = text_field.tensor_type
         if label_field is not None:
            self.label_itos = label_field.vocab.itos
 

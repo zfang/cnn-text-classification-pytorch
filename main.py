@@ -92,9 +92,12 @@ def main():
     del args.no_cuda
     args.kernel_sizes = [int(k) for k in args.kernel_sizes.split(',')]
     if args.dataset:
-        args.save_dir = os.path.join(args.save_dir, args.dataset, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+        args.save_dir = os.path.join(args.save_dir,
+                                     os.path.basename(args.dataset),
+                                     datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     else:
-        args.save_dir = os.path.join(args.save_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+        args.save_dir = os.path.join(args.save_dir,
+                                     datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
     print("\nParameters:")
     for attr, value in sorted(args.__dict__.items()):

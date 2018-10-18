@@ -116,11 +116,10 @@ def predict(text, model, args):
     model.eval()
     text = word_tokenize(text)
     text = [[model.vocab_stoi[x] for x in text]]
-    x = model.tensor_type(text)
+    x = torch.long(text)
     x = autograd.Variable(x, volatile=True)
     if args.cuda:
         x = x.cuda()
-    # print(x)
     output = model(x)
     if args.debug:
         output = F.softmax(output)
