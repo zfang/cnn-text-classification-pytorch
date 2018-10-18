@@ -23,7 +23,7 @@ def train(train_iter, dev_iter, model, args):
     model.train()
     best_dev_accuracy = 0
     best_model = copy.deepcopy(model)
-    best_epoch = 1
+    best_epoch = 0
 
     if not os.path.isdir(args.save_dir):
         os.makedirs(args.save_dir)
@@ -41,8 +41,9 @@ def train(train_iter, dev_iter, model, args):
             best_epoch = epoch
         torch.save(best_model, os.path.join(args.save_dir, 'model_{}.pt'.format(identifier)))
 
-    for epoch in tqdm(range(1, args.epochs + 1)):
-        for batch in train_iter:
+    for epoch in range(args.epochs):
+        print('Running epoch {}'.format(epoch))
+        for batch in tqdm(train_iter):
             feature, target = batch.text, batch.label
             feature.data.t_(), target.data.sub_(1)  # batch first, index align
             if args.cuda:
@@ -65,13 +66,12 @@ def train(train_iter, dev_iter, model, args):
             if steps % args.log_interval == 0:
                 corrects = (predictions.data == target.data).sum()
                 accuracy = 100.0 * corrects / batch.batch_size
-                tensorboard_logger.add_scalar('training_loss_{}'.format(identifier), loss.data[0], steps)
+                tensorboard_logger.add_scalar('training_loss_{}'.format(identifier), loss.data.item(), steps)
                 tensorboard_logger.add_scalar('training_accuracy_{}'.format(identifier), accuracy, steps)
 
             if args.save_interval != 0 and steps % args.save_interval == 0:
                 checkpoint()
 
-        print()
         checkpoint()
 
     print("Best epoch:", best_epoch)
