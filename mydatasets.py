@@ -6,6 +6,7 @@ import tarfile
 import pandas as pd
 from six.moves import urllib
 from torchtext import data
+from tqdm import tqdm
 
 
 class TarDataset(data.Dataset):
@@ -119,7 +120,7 @@ class PreSplitHeaderlessTsvDataset(data.Dataset):
         df['text'] = df['text'].astype('str')
         label_lookup = ['negative', 'positive']
         examples = [data.Example.fromlist([row['text'], label_lookup[row['label']]], fields)
-                    for _, row in df.iterrows()]
+                    for _, row in tqdm(df.iterrows(), total=len(df))]
         super(PreSplitHeaderlessTsvDataset, self).__init__(examples, fields, **kwargs)
 
     @classmethod

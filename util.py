@@ -1,6 +1,7 @@
 import torchtext.data as data
 import torchtext.datasets as datasets
 from pymagnitude import *
+from tqdm import tqdm
 
 import mydatasets
 
@@ -63,7 +64,10 @@ def headerless_tsv(data_dir, **kargs):
 
 def load_word_vectors(vocab):
     word2vec = Magnitude(MagnitudeUtils.download_model("word2vec/GoogleNews-vectors-negative300"))
-    return np.asarray(word2vec.query(vocab.itos))
+    emb = np.zeros((len(vocab.itos), word2vec.dim))
+    for i, word in tqdm(enumerate(vocab.itos), total=emb.shape[0]):
+        emb[i, :] = word2vec.query(word)
+    return emb
 
 
 def print_time(text, timeMeter):
