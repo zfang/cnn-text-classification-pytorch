@@ -66,7 +66,6 @@ def main():
     parser.add_argument('-dataset', type=str, default='sst', help='specify dataset: sst | mr')
     parser.add_argument('-fine-grained', action='store_true', default=False, help='use 5-class sst')
     parser.add_argument('-train-subtrees', action='store_true', default=False, help='train sst subtrees')
-    parser.add_argument('-load-saved-word-vectors', type=str, default=None, help='load saved word vectors')
     parser.add_argument('-debug', action='store_true', default=False, help='debug mode')
     args = parser.parse_args()
 
@@ -88,12 +87,6 @@ def main():
     if text_field:
         print("\nLoading pre-trained word vectors...")
         word_vector_matrix = load_word_vectors(vocab=text_field.vocab)
-
-        word_vectors_filepre = os.path.splitext(os.path.basename(args.load_word_vectors))[0]
-        np.save('-'.join([args.dataset, word_vectors_filepre, 'word-vectors.npy']), word_vector_matrix)
-    elif args.load_saved_word_vectors:
-        print("\nLoading saved word vectors...")
-        word_vector_matrix = np.load(args.load_saved_word_vectors)
 
     args.cuda = (not args.no_cuda) and torch.cuda.is_available();
     del args.no_cuda
