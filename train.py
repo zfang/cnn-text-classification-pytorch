@@ -15,9 +15,6 @@ def train(train_iter, dev_iter, model, args):
         model.cuda()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    log_dir = './log/'
-    os.makedirs(log_dir, exist_ok=True)
-    tensorboard_logger = SummaryWriter(log_dir)
 
     steps = 0
     model.train()
@@ -29,6 +26,9 @@ def train(train_iter, dev_iter, model, args):
         os.makedirs(args.save_dir)
 
     identifier = 'lr{}_batch{}'.format(args.lr, args.batch_size)
+    log_dir = './log/{}/{}/'.format(os.path.basename(args.dataset), identifier)
+    os.makedirs(log_dir, exist_ok=True)
+    tensorboard_logger = SummaryWriter(log_dir)
 
     def checkpoint():
         global best_dev_accuracy
@@ -39,7 +39,8 @@ def train(train_iter, dev_iter, model, args):
             best_dev_accuracy = dev_accuracy
             best_model = copy.deepcopy(model)
             best_epoch = epoch
-        torch.save(best_model, os.path.join(args.save_dir, 'model_{}.pt'.format(identifier)))
+            torch.save(best_model, os.path.join(args.save_dir, 'model_{}.pt'.format(identifier)))
+        tensorboard_logger.add_scalar('dev_accuracy', dev_accuracy, steps)
 
     for epoch in range(args.epochs):
         print('Running epoch {}'.format(epoch))
@@ -66,8 +67,8 @@ def train(train_iter, dev_iter, model, args):
             if steps % args.log_interval == 0:
                 corrects = (predictions.data == target.data).sum()
                 accuracy = 100.0 * corrects / batch.batch_size
-                tensorboard_logger.add_scalar('training_loss_{}'.format(identifier), loss.data.item(), steps)
-                tensorboard_logger.add_scalar('training_accuracy_{}'.format(identifier), accuracy, steps)
+                tensorboard_logger.add_scalar('train_loss', loss.data.item(), steps)
+                tensorboard_logger.add_scalar('train_accuracy', accuracy, steps)
 
             if args.save_interval != 0 and steps % args.save_interval == 0:
                 checkpoint()

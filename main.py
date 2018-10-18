@@ -24,7 +24,8 @@ def load_data(args):
         'batch_size': args.batch_size,
         'device': args.device,
         'repeat': False,
-        'shuffle': args.shuffle if args.shuffle else None
+        'shuffle': args.shuffle if args.shuffle else None,
+        'sort': False,
     }
 
     if args.dataset == 'mr':
