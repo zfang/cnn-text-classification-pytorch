@@ -20,7 +20,7 @@ def get_train_dev(callable, batch_size=32, **kargs):
     label_field.build_vocab(train_data, dev_data)
     train_iter, dev_iter = data.Iterator.splits(
         (train_data, dev_data),
-        batch_sizes=(batch_size, len(dev_data)),
+        batch_sizes=(batch_size, batch_size),
         **kargs)
 
     return text_field, label_field, train_iter, dev_iter, None
@@ -34,7 +34,7 @@ def get_train_dev_test(callable, batch_size=32, **kargs):
     label_field.build_vocab(train_data, dev_data, test_data)
     train_iter, dev_iter, test_iter = data.BucketIterator.splits(
         (train_data, dev_data, test_data),
-        batch_sizes=(batch_size, len(dev_data), len(test_data)),
+        batch_sizes=(batch_size, batch_size, batch_size),
         **kargs)
 
     return text_field, label_field, train_iter, dev_iter, test_iter

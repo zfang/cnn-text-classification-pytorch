@@ -87,7 +87,12 @@ def main():
     word_vector_matrix = None
     if text_field:
         print("\nLoading pre-trained word vectors...")
-        word_vector_matrix = load_word_vectors(vocab=text_field.vocab)
+        word_vector_filename = '{}_word2vec.npy'.format(os.path.basename(args.dataset))
+        if os.path.exists(word_vector_filename):
+            word_vector_matrix = np.load(word_vector_filename)
+        else:
+            word_vector_matrix = load_word_vectors(vocab=text_field.vocab)
+            np.save(word_vector_filename, word_vector_matrix)
 
     args.cuda = (not args.no_cuda) and torch.cuda.is_available();
     del args.no_cuda

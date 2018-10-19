@@ -4,7 +4,6 @@ import os
 import torch
 import torch.autograd as autograd
 import torch.nn.functional as F
-import torchnet.meter as meter
 from nltk import word_tokenize
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
@@ -25,22 +24,20 @@ def train(train_iter, dev_iter, model, args):
     if not os.path.isdir(args.save_dir):
         os.makedirs(args.save_dir)
 
-    identifier = 'lr{}_batch{}'.format(args.lr, args.batch_size)
+    identifier = 'lr{}_batch{}_dropout{}'.format(args.lr, args.batch_size, args.dropout)
     log_dir = './log/{}/{}/'.format(os.path.basename(args.dataset), identifier)
     os.makedirs(log_dir, exist_ok=True)
     tensorboard_logger = SummaryWriter(log_dir)
 
-    def checkpoint():
-        global best_dev_accuracy
-        global best_model
-        global best_epoch
-        dev_accuracy = eval(dev_iter, model, args, print_info=True)
+    def checkpoint(best_dev_accuracy, best_model, best_epoch):
+        dev_accuracy = eval(dev_iter, model, args, print_info=False)
         if dev_accuracy > best_dev_accuracy:
             best_dev_accuracy = dev_accuracy
             best_model = copy.deepcopy(model)
             best_epoch = epoch
             torch.save(best_model, os.path.join(args.save_dir, 'model_{}.pt'.format(identifier)))
         tensorboard_logger.add_scalar('dev_accuracy', dev_accuracy, steps)
+        return best_dev_accuracy, best_model, best_epoch
 
     for epoch in range(args.epochs):
         print('Running epoch {}'.format(epoch))
@@ -71,9 +68,9 @@ def train(train_iter, dev_iter, model, args):
                 tensorboard_logger.add_scalar('train_accuracy', accuracy, steps)
 
             if args.save_interval != 0 and steps % args.save_interval == 0:
-                checkpoint()
+                best_dev_accuracy, best_model, best_epoch = checkpoint(best_dev_accuracy, best_model, best_epoch)
 
-        checkpoint()
+        best_dev_accuracy, best_model, best_epoch = checkpoint(best_dev_accuracy, best_model, best_epoch)
 
     print("Best epoch:", best_epoch)
     print("Best dev accuracy:", best_dev_accuracy)
@@ -82,7 +79,6 @@ def train(train_iter, dev_iter, model, args):
 def eval(data_iter, model, args, print_info=False):
     model.eval()
     corrects, avg_loss = 0, 0
-    confusionMeter = meter.ConfusionMeter(len(model.label_itos))
     for batch in tqdm(data_iter, leave=False):
         feature, target = batch.text, batch.label
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
@@ -93,22 +89,18 @@ def eval(data_iter, model, args, print_info=False):
         loss = F.cross_entropy(logit, target, size_average=False)
 
         predictions = torch.max(logit, 1)[1].view(target.size())
-        avg_loss += loss.data[0]
+        avg_loss += loss.data.item()
         corrects += (predictions.data == target.data).sum()
-
-        confusionMeter.add(predictions.data, target.data)
 
     size = len(data_iter.dataset)
     avg_loss = avg_loss / size
     accuracy = 100.0 * corrects / size
     model.train()
     if print_info:
-        print('Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})'.format(avg_loss,
-                                                                      accuracy,
-                                                                      corrects,
-                                                                      size))
-        print("Confusion Matrix\n", confusionMeter.value())
-        print()
+        print('Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(avg_loss,
+                                                                        accuracy,
+                                                                        corrects,
+                                                                        size))
     return accuracy
 
 
