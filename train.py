@@ -2,7 +2,6 @@ import copy
 import os
 
 import torch
-import torch.autograd as autograd
 import torch.nn.functional as F
 from nltk import word_tokenize
 from tensorboardX import SummaryWriter
@@ -85,7 +84,8 @@ def eval(data_iter, model, args, print_info=False):
         if args.cuda:
             feature, target = feature.cuda(), target.cuda()
 
-        logit = model(feature)
+        with torch.no_grad():
+            logit = model(feature)
         loss = F.cross_entropy(logit, target, size_average=False)
 
         predictions = torch.max(logit, 1)[1].view(target.size())
@@ -109,11 +109,12 @@ def predict(text, model, args):
     model.eval()
     text = word_tokenize(text)
     text = [[model.vocab_stoi[x] for x in text]]
-    x = torch.long(text)
-    x = autograd.Variable(x, volatile=True)
+    tensor_type = torch.LongTensor
     if args.cuda:
-        x = x.cuda()
-    output = model(x)
+        tensor_type = torch.cuda.LongTensor
+    x = tensor_type(text)
+    with torch.no_grad():
+        output = model(x)
     if args.debug:
         output = F.softmax(output)
         for i, v in enumerate(output[0]):

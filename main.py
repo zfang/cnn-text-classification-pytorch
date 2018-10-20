@@ -7,6 +7,7 @@ import sys
 
 import numpy as np
 import torch
+from tqdm import tqdm
 
 import model
 import train
@@ -64,7 +65,7 @@ def main():
     parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
     parser.add_argument('-predictfile', type=str, default=None, help='predict sentences in a file')
     parser.add_argument('-test', action='store_true', default=False, help='train or test')
-    parser.add_argument('-dataset', type=str, default='sst', help='specify dataset: sst | mr')
+    parser.add_argument('-dataset', type=str, default=None, help='specify dataset: sst | mr')
     parser.add_argument('-fine-grained', action='store_true', default=False, help='use 5-class sst')
     parser.add_argument('-train-subtrees', action='store_true', default=False, help='train sst subtrees')
     parser.add_argument('-debug', action='store_true', default=False, help='debug mode')
@@ -99,11 +100,9 @@ def main():
     args.kernel_sizes = [int(k) for k in args.kernel_sizes.split(',')]
     if args.dataset:
         args.save_dir = os.path.join(args.save_dir,
-                                     os.path.basename(args.dataset),
-                                     datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+                                     os.path.basename(args.dataset))
     else:
-        args.save_dir = os.path.join(args.save_dir,
-                                     datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+        args.save_dir = os.path.join(args.save_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
     print("\nParameters:")
     for attr, value in sorted(args.__dict__.items()):
@@ -115,7 +114,7 @@ def main():
     else:
         print('\nLoading model from [%s]...' % args.snapshot)
         try:
-            cnn = torch.load(args.snapshot)
+            cnn = torch.load(args.snapshot, map_location=lambda storage, loc: storage)
         except:
             print("Sorry, This snapshot doesn't exist.");
             exit()
@@ -132,23 +131,23 @@ def main():
     elif args.predictfile is not None:
         filepre = os.path.splitext(os.path.basename(args.predictfile))[0]
         predictions_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'predictions')
-        result_path = os.path.join(predictions_dir, filepre + '-predictions-' + datetime.datetime.now().strftime(
-            '%Y-%m-%d_%H-%M-%S') + '.csv')
+        identifier = 'lr{}_batch{}_dropout{}'.format(args.lr, args.batch_size, args.dropout)
+        result_path = os.path.join(predictions_dir, filepre + '-predictions-' + identifier + '.csv')
         if not os.path.isdir(predictions_dir): os.makedirs(predictions_dir)
         with open(args.predictfile, 'r') as rf, \
                 open(result_path, 'w') as wf:
             writer = csv.writer(wf)
             writer.writerow(['text', 'label'])
-            for i, line in enumerate(rf):
+            lines = list(rf)
+            for line in tqdm(lines):
                 line = line.strip()
                 label = train.predict(line, cnn, args)
                 writer.writerow([line, label])
-                sys.stdout.write('\rPredicted [{}] sentences...'.format(i + 1))
             print('\nPredictions are written to ', result_path)
 
     elif args.test:
         if test_iter:
-            train.eval(test_iter, cnn, args)
+            train.eval(test_iter, cnn, args, print_info=True)
         else:
             print("\nThe test dataset does not exist.\n")
     else:
