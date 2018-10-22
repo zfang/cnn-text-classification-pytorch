@@ -3,7 +3,6 @@ import argparse
 import csv
 import datetime
 import os
-import sys
 
 import numpy as np
 import torch
@@ -69,6 +68,7 @@ def main():
     parser.add_argument('-fine-grained', action='store_true', default=False, help='use 5-class sst')
     parser.add_argument('-train-subtrees', action='store_true', default=False, help='train sst subtrees')
     parser.add_argument('-debug', action='store_true', default=False, help='debug mode')
+    parser.add_argument('-word-vector', type=str, default=None)
     args = parser.parse_args()
 
     # update args and print
@@ -88,7 +88,7 @@ def main():
     word_vector_matrix = None
     if text_field:
         print("\nLoading pre-trained word vectors...")
-        word_vector_filename = '{}_word2vec.npy'.format(os.path.basename(args.dataset))
+        word_vector_filename = args.word_vector or '{}_word2vec.npy'.format(os.path.basename(args.dataset))
         if os.path.exists(word_vector_filename):
             word_vector_matrix = np.load(word_vector_filename)
         else:
@@ -100,7 +100,8 @@ def main():
     args.kernel_sizes = [int(k) for k in args.kernel_sizes.split(',')]
     if args.dataset:
         args.save_dir = os.path.join(args.save_dir,
-                                     os.path.basename(args.dataset))
+                                     os.path.basename(args.dataset),
+                                     datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     else:
         args.save_dir = os.path.join(args.save_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
@@ -132,7 +133,11 @@ def main():
         filepre = os.path.splitext(os.path.basename(args.predictfile))[0]
         predictions_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'predictions')
         identifier = 'lr{}_batch{}_dropout{}'.format(args.lr, args.batch_size, args.dropout)
-        result_path = os.path.join(predictions_dir, filepre + '-predictions-' + identifier + '.csv')
+        result_path = os.path.join(predictions_dir,
+                                   filepre +
+                                   '-predictions-' +
+                                   identifier +
+                                   '.csv')
         if not os.path.isdir(predictions_dir): os.makedirs(predictions_dir)
         with open(args.predictfile, 'r') as rf, \
                 open(result_path, 'w') as wf:
